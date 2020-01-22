@@ -37,6 +37,8 @@
 #include <libyul/Object.h>
 #include <libyul/YulString.h>
 
+#include <libsolutil/Whiskers.h>
+
 #include <liblangutil/ErrorReporter.h>
 #include <liblangutil/Scanner.h>
 #include <liblangutil/SourceReferenceFormatter.h>
@@ -55,6 +57,7 @@
 
 using namespace std;
 using namespace solidity;
+using namespace solidity::util;
 using namespace solidity::evmasm;
 using namespace solidity::frontend;
 using namespace solidity::langutil;
@@ -296,12 +299,13 @@ CompilerContext& CompilerContext::appendConditionalInvalid()
 	return *this;
 }
 
-CompilerContext& CompilerContext::appendRevert()
+CompilerContext& CompilerContext::appendRevert(string const& _message)
 {
-	return *this << u256(0) << u256(0) << Instruction::REVERT;
+	appendInlineAssembly("{ " + revertReasonIfDebug(_message) + " }");
+	return *this;
 }
 
-CompilerContext& CompilerContext::appendConditionalRevert(bool _forwardReturnData)
+CompilerContext& CompilerContext::appendConditionalRevert(bool _forwardReturnData, string const& _message)
 {
 	if (_forwardReturnData && m_evmVersion.supportsReturndata())
 		appendInlineAssembly(R"({
@@ -311,9 +315,7 @@ CompilerContext& CompilerContext::appendConditionalRevert(bool _forwardReturnDat
 			}
 		})", {"condition"});
 	else
-		appendInlineAssembly(R"({
-			if condition { revert(0, 0) }
-		})", {"condition"});
+		appendInlineAssembly("{ if condition { " + revertReasonIfDebug(_message) + " } }", {"condition"});
 	*this << Instruction::POP;
 	return *this;
 }
@@ -486,6 +488,40 @@ vector<ContractDefinition const*>::const_iterator CompilerContext::superContract
 	auto it = find(m_inheritanceHierarchy.begin(), m_inheritanceHierarchy.end(), &_contract);
 	solAssert(it != m_inheritanceHierarchy.end(), "Base not found in inheritance hierarchy.");
 	return ++it;
+}
+
+string CompilerContext::revertReasonIfDebug(string const& _message)
+{
+	if (m_revertStrings >= RevertStrings::Debug && !_message.empty())
+	{
+		Whiskers templ(R"({
+			let len := <length>
+			mstore(0, <sig>)
+			mstore(4, 0x20)
+			mstore(add(4, 0x20), len)
+			let pos := add(4, 0x40)
+			<#word>
+				mstore(add(pos, <offset>), <wordValue>)
+			</word>
+			revert(0, add(pos, <end>))
+		})");
+		templ("sig", (u256(util::FixedHash<4>::Arith(util::FixedHash<4>(util::keccak256("Error(string)")))) << (256 - 32)).str());
+		templ("length", to_string(_message.length()));
+
+		size_t words = (_message.length() + 31) / 32;
+		vector<map<string, string>> wordParams(words);
+		for (size_t i = 0; i < words; ++i)
+		{
+			wordParams[i]["offset"] = to_string(i * 32);
+			wordParams[i]["wordValue"] = formatAsStringOrNumber(_message.substr(32 * i, 32));
+		}
+		templ("word", wordParams);
+		templ("end", to_string(words * 32));
+
+		return templ.render();
+	}
+	else
+		return "revert(0, 0)";
 }
 
 void CompilerContext::updateSourceLocation()
