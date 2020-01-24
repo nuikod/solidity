@@ -165,7 +165,7 @@ void CompilerStack::setRevertStringBehaviour(RevertStrings _revertStrings)
 {
 	if (m_stackState >= ParsingPerformed)
 		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Must set revert string settings before parsing."));
-	solUnimplementedAssert(_revertStrings == RevertStrings::Default || _revertStrings == RevertStrings::Strip, "");
+	solUnimplementedAssert(_revertStrings != RevertStrings::VerboseDebug, "");
 	m_revertStrings = _revertStrings;
 }
 
