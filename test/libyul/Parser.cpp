@@ -501,7 +501,7 @@ BOOST_AUTO_TEST_CASE(if_statement_invalid)
 
 BOOST_AUTO_TEST_CASE(switch_case_types)
 {
-	CHECK_ERROR("{ switch 0:u256 case 0:u256 {} case 1:u32 {} }", TypeError, "Switch cases have non-matching types.");
+	CHECK_ERROR("{ switch 0:u256 case 0:u256 {} case 1:u32 {} }", TypeError, "Expected a value of \"u256\" but got \"u32\".");
 	// The following should be an error in the future, but this is not yet detected.
 	BOOST_CHECK(successParse("{ switch 0:u256 case 0:u32 {} case 1:u32 {} }"));
 }
