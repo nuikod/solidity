@@ -71,6 +71,16 @@ public:
 	u256 evalBuiltin(YulString _fun, std::vector<u256> const& _arguments);
 
 private:
+	template <typename Word>
+	u256 evalWasmBuiltin(
+		std::string const& _fun,
+		std::vector<Word> const& _arguments
+	);
+	u256 evalEthBuiltin(
+		std::string const& _fun,
+		std::vector<uint64_t> const& _arguments
+	);
+
 	/// Checks if the memory access is not too large for the interpreter and adjusts
 	/// msize accordingly.
 	/// @returns false if the amount of bytes read is lager than 0xffff
