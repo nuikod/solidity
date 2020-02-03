@@ -247,11 +247,8 @@ BOOST_AUTO_TEST_CASE(optional_types)
 
 BOOST_AUTO_TEST_CASE(invalid_types)
 {
-	/// testing invalid literal
-	/// NOTE: these will need to change when types are compared
-	CHECK_ERROR("{ let x:bool := 1:invalid }", TypeError, "\"invalid\" is not a valid type (user defined types are not yet supported).");
-	/// testing invalid variable declaration
-	CHECK_ERROR("{ let x:invalid := 1:bool }", TypeError, "\"invalid\" is not a valid type (user defined types are not yet supported).");
+	CHECK_ERROR("{ let x:invalid }", TypeError, "\"invalid\" is not a valid type (user defined types are not yet supported).");
+	CHECK_ERROR("{ let x:invalid := 1:invalid }", TypeError, "\"invalid\" is not a valid type (user defined types are not yet supported).");
 	CHECK_ERROR("{ function f(a:invalid) {} }", TypeError, "\"invalid\" is not a valid type (user defined types are not yet supported).");
 }
 
