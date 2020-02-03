@@ -95,6 +95,11 @@ u256 EwasmBuiltinInterpreter::evalBuiltin(YulString _fun, vector<u256> const& _a
 	}
 	else if (_fun == "drop"_yulstring)
 		return {};
+	else if (_fun == "i32.wrap_i64"_yulstring)
+		return arg.at(0) & uint32_t(-1);
+	else if (_fun == "i64.extend_i32_u"_yulstring)
+		// Return the same as above because everything is u256 anyway.
+		return arg.at(0) & uint32_t(-1);
 	else if (_fun == "unreachable"_yulstring)
 	{
 		logTrace(evmasm::Instruction::INVALID, {});
